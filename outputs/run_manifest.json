@@ -1,0 +1,89 @@
+{
+  "source_rows": 101766,
+  "eligible_rows": 99343,
+  "excluded_rows": 2423,
+  "exclusion_dispositions": [
+    11,
+    13,
+    14,
+    19,
+    20,
+    21
+  ],
+  "source_csv_sha256": "0689e7ec031237dc63031b938805c48377748761a3b26acab621567afa24df97",
+  "patient_overlap": 0,
+  "seed": 360,
+  "prediction_time": "At discharge",
+  "target": "Recorded readmission <30 days versus NO or >30",
+  "features": [
+    "time_in_hospital",
+    "num_lab_procedures",
+    "num_procedures",
+    "num_medications",
+    "number_outpatient",
+    "number_emergency",
+    "number_inpatient",
+    "number_diagnoses",
+    "age",
+    "admission_type_id",
+    "discharge_disposition_id",
+    "admission_source_id",
+    "diag_1",
+    "diag_2",
+    "diag_3",
+    "max_glu_serum",
+    "A1Cresult",
+    "metformin",
+    "insulin",
+    "change",
+    "diabetesMed"
+  ],
+  "splits": {
+    "train": {
+      "rows": 59494,
+      "patients": 41993,
+      "positive_rate": 0.11411234746360978
+    },
+    "calibration": {
+      "rows": 14991,
+      "patients": 10499,
+      "positive_rate": 0.11546928156894136
+    },
+    "validation": {
+      "rows": 9945,
+      "patients": 6999,
+      "positive_rate": 0.10819507290095526
+    },
+    "test": {
+      "rows": 14913,
+      "patients": 10499,
+      "positive_rate": 0.11520150204519547
+    }
+  },
+  "versions": {
+    "python": "3.10.11",
+    "numpy": "2.2.6",
+    "pandas": "2.3.3",
+    "scikit_learn": "1.7.2",
+    "joblib": "1.5.3"
+  },
+  "selected_model": "random_forest",
+  "threshold_selection": "Maximum validation F2 on a fixed grid; exploratory, not clinical utility",
+  "selected_threshold": 0.08499999999999999,
+  "bootstrap_repeats": 5,
+  "training_fit_rows": 12000,
+  "test_cluster_bootstrap_95pct": {
+    "average_precision": {
+      "low": 0.16607037234364777,
+      "high": 0.21433436970022807
+    },
+    "roc_auc": {
+      "low": 0.6343127594581235,
+      "high": 0.662965143757252
+    },
+    "brier_score": {
+      "low": 0.09144132914872954,
+      "high": 0.10138042022658537
+    }
+  }
+}

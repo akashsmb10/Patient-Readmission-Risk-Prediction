@@ -3,7 +3,13 @@ __pycache__/
 .venv/
 .venv-p2/
 data/
-outputs/
+outputs/*
+!outputs/test_metrics.csv
+!outputs/validation_comparison.csv
+!outputs/run_manifest.json
+!outputs/permutation_importance.csv
+!outputs/subgroup_audit.csv
+!outputs/evaluation.png
 outputs/*.joblib
 outputs/test_predictions.csv
 outputs/split_manifest.csv
