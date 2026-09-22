@@ -161,6 +161,31 @@ def make_plots(y,probs,selected,threshold,output):
     fig.tight_layout(); fig.savefig(output/'evaluation.png',dpi=160); plt.close(fig)
 
 
+def make_dashboard(y, probs, selected, threshold, evaluation, importance, subgroup, output):
+    """Write a standalone model-performance dashboard; not a clinical interface."""
+    best=next(row for row in evaluation if row['model']==selected)
+    precision,recall,_=precision_recall_curve(y,probs[selected])
+    fpr,tpr,_=roc_curve(y,probs[selected])
+    top=importance.head(8).sort_values('mean_ap_decrease')
+    group=subgroup[subgroup.attribute=='gender'].copy()
+    payload=json.dumps({'recall':recall[::max(1,len(recall)//180)].tolist(),
+        'precision':precision[::max(1,len(precision)//180)].tolist(),
+        'fpr':fpr[::max(1,len(fpr)//180)].tolist(),'tpr':tpr[::max(1,len(tpr)//180)].tolist(),
+        'features':top.feature.tolist(),'importance':top.mean_ap_decrease.tolist(),
+        'groups':group.group.astype(str).tolist(),'group_auc':group.roc_auc.tolist()})
+    flagged=int(round(best['flagged_fraction']*len(y)))
+    html=f'''<!doctype html><html lang="en"><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Readmission Benchmark — Model Performance</title><script src="https://cdn.plot.ly/plotly-2.35.2.min.js"></script><style>
+*{{box-sizing:border-box}}body{{margin:0;background:#f4f7fb;color:#172554;font:15px Inter,system-ui,-apple-system,sans-serif}}.shell{{max-width:1440px;margin:auto;padding:36px 28px 56px}}.hero{{background:linear-gradient(120deg,#12304a,#0f766e);color:#fff;border-radius:20px;padding:32px 34px;margin-bottom:22px;box-shadow:0 12px 30px #134e4a33}}.eyebrow{{text-transform:uppercase;letter-spacing:.11em;font-weight:700;font-size:11px;opacity:.8}}h1{{font-size:32px;margin:8px 0}}.hero p{{max-width:850px;line-height:1.55;margin:0;color:#ccfbf1}}.cards{{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin:20px 0}}.cards article,.panel{{background:#fff;border:1px solid #e5edf8;border-radius:16px;box-shadow:0 4px 14px #1e3a8a0c}}.cards article{{padding:19px}}.cards span,.cards small{{display:block;color:#64748b}}.cards strong{{display:block;font-size:27px;margin:8px 0;color:#172554}}.grid{{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px}}.panel{{padding:4px;min-height:340px}}.notice{{margin-top:18px;padding:14px 17px;border-radius:12px;background:#fff7ed;color:#9a3412;border:1px solid #fed7aa;line-height:1.45}}@media(max-width:850px){{.cards,.grid{{grid-template-columns:1fr}}.shell{{padding:18px}}.hero{{padding:25px}}h1{{font-size:26px}}}}</style>
+<main class="shell"><header class="hero"><div class="eyebrow">Held-out evaluation · academic benchmark</div><h1>Patient Readmission Risk Prediction</h1><p>Transparent evaluation of a discharge-time benchmark for recorded 30-day readmission. This is a model-performance report—not a clinical decision tool.</p></header><section class="cards"><article><span>Selected model</span><strong>{selected.replace('_',' ').title()}</strong><small>Chosen using validation average precision</small></article><article><span>Held-out average precision</span><strong>{best['average_precision']:.3f}</strong><small>Test-set prevalence: {np.mean(y):.3f}</small></article><article><span>Held-out ROC-AUC</span><strong>{best['roc_auc']:.3f}</strong><small>Calibration Brier: {best['brier_score']:.3f}</small></article><article><span>Exploratory threshold</span><strong>{threshold:.3f}</strong><small>{flagged:,} of {len(y):,} encounters flagged</small></article></section><section class="grid"><article class="panel"><div id="pr"></div></article><article class="panel"><div id="roc"></div></article><article class="panel"><div id="importance"></div></article><article class="panel"><div id="subgroup"></div></article></section><p class="notice"><strong>Safety and scope:</strong> this historical de-identified dataset is for academic study only. It is not clinically validated and must not be used for treatment, triage, discharge, or decisions about individuals. Subgroup results are descriptive and do not establish fairness.</p></main>
+<script>const d={payload},base={{paper_bgcolor:'rgba(0,0,0,0)',plot_bgcolor:'white',font:{{color:'#172554'}},margin:{{l:58,r:24,t:60,b:48}},height:340}};
+Plotly.newPlot('pr',[{{x:d.recall,y:d.precision,mode:'lines',line:{{color:'#0f766e',width:3}},name:'Selected model'}},{{x:[0,1],y:[{float(np.mean(y))},{float(np.mean(y))}],mode:'lines',line:{{color:'#94a3b8',dash:'dot'}},name:'Prevalence'}}],{{...base,title:'Precision–recall on held-out test',xaxis:{{title:'Recall',range:[0,1]}},yaxis:{{title:'Precision',range:[0,1]}},legend:{{orientation:'h',y:-.22}}}},{{responsive:true}});
+Plotly.newPlot('roc',[{{x:d.fpr,y:d.tpr,mode:'lines',line:{{color:'#2563eb',width:3}},name:'Selected model'}},{{x:[0,1],y:[0,1],mode:'lines',line:{{color:'#94a3b8',dash:'dot'}},name:'Chance'}}],{{...base,title:'ROC on held-out test',xaxis:{{title:'False positive rate',range:[0,1]}},yaxis:{{title:'True positive rate',range:[0,1]}},legend:{{orientation:'h',y:-.22}}}},{{responsive:true}});
+Plotly.newPlot('importance',[{{x:d.importance,y:d.features,type:'bar',orientation:'h',marker:{{color:'#7c3aed'}}}}],{{...base,title:'Validation permutation importance',xaxis:{{title:'Average-precision decrease'}}}},{{responsive:true}});
+Plotly.newPlot('subgroup',[{{x:d.groups,y:d.group_auc,type:'bar',marker:{{color:'#0891b2'}},text:d.group_auc.map(v=>v.toFixed(3)),textposition:'outside'}}],{{...base,title:'Exploratory gender subgroup ROC-AUC',xaxis:{{title:'Group'}},yaxis:{{title:'ROC-AUC',range:[0,1]}}}},{{responsive:true}});</script>'''
+    (output/'dashboard.html').write_text(html,encoding='utf-8')
+
+
 def main():
     parser=argparse.ArgumentParser(); parser.add_argument('--bootstrap',type=int,default=100)
     args=parser.parse_args()
@@ -260,6 +285,7 @@ def main():
                  'features':FEATURES,'threshold':threshold},output/'model.joblib')
     (output/'run_manifest.json').write_text(json.dumps(audit,indent=2))
     make_plots(ye,probs,selected,threshold,output)
+    make_dashboard(ye,probs,selected,threshold,evaluation,imp,pd.DataFrame(group_rows),output)
     best=next(r for r in evaluation if r['model']==selected)
     report=f'''# Readmission model evaluation
 

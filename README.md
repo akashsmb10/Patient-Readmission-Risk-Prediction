@@ -24,7 +24,7 @@ python run.py --bootstrap 100
 python -m pytest -q
 ```
 
-Outputs include validation and test comparison tables, evaluation chart, split manifest, subgroup audit, permutation importance, SHAP feature importance, five prediction examples, model artifact, and run manifest.
+Outputs include a responsive held-out model-performance dashboard (`outputs/dashboard.html`), validation and test comparison tables, evaluation chart, split manifest, subgroup audit, permutation importance, SHAP feature importance, five prediction examples, model artifact, and run manifest. The dashboard reports aggregate evaluation only; it is not a patient-level clinical interface.
 
 ## Limitations and fairness
 
