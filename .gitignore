@@ -1,0 +1,9 @@
+__pycache__/
+.pytest_cache/
+.venv/
+.venv-p2/
+data/
+outputs/
+outputs/*.joblib
+outputs/test_predictions.csv
+outputs/split_manifest.csv
