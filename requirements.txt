@@ -5,3 +5,4 @@ matplotlib==3.10.9
 joblib==1.5.3
 pytest==9.1.1
 shap==0.47.2
+streamlit==1.42.2

@@ -75,6 +75,18 @@ python -m pytest -q
 
 Open `outputs/dashboard.html` for the interactive aggregate evaluation report. Generated outputs also include comparison tables, split manifest, subgroup audit, SHAP and permutation importance, model artifact, and run manifest.
 
+## Research App and Engineering Practices
+
+Launch the companion Streamlit app after generating the artifacts:
+
+```powershell
+streamlit run app.py
+```
+
+The app is intentionally aggregate-only: it presents held-out performance, model comparison, importance, and subgroup-audit artifacts, but does not accept patient inputs or return individual risk scores. This demonstrates an appropriate boundary between a portfolio research interface and clinical deployment.
+
+The repository also includes GitHub Actions protocol tests. Together with the fixed seed, data checksum, split manifest, model artifact, and run manifest, these provide a reproducible audit trail for each benchmark run.
+
 ## Safety, Fairness, and Limits
 
 This historical benchmark has neither temporal nor external validation; labels may miss readmissions outside the recorded system. Repeated encounters within a split remain correlated. Subgroup estimates are exploratory, omit small groups, and do not establish fairness. SHAP and permutation importance describe model reliance, not causation. See the [model card](reports/model_card.md) for intended use, risks, privacy, and monitoring limits.
