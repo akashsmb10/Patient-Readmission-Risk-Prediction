@@ -1,20 +1,69 @@
 # Patient Readmission Risk Prediction
 
-Academic portfolio study only. This is not a clinical tool and must not be used for treatment, triage, discharge, or deployment decisions.
+A leakage-aware machine-learning benchmark for estimating recorded 30-day readmission from discharge-available fields in the UCI Diabetes 130-US Hospitals dataset.
 
-## Data and target
+> **Academic portfolio study only.** This is not a clinical tool and must not be used for treatment, triage, discharge, deployment, or any decision affecting an individual.
 
-Source: [UCI Diabetes 130-US Hospitals for Years 1999–2008](https://archive.ics.uci.edu/dataset/296/diabetes%2B130-us%2Bhospitals%2Bfor%2Byears%2B1999-2008), CC BY 4.0. It contains de-identified diabetic inpatient encounters from 130 US hospitals/integrated networks. The prediction point is **at discharge**. Target `1` means the dataset label is `<30`; target `0` combines `NO` and `>30`.
+## Model Performance Preview
 
-Features are restricted to discharge-available encounter fields. Encounter ID, patient ID, target, race, and gender are excluded from model features. Race and gender are retained only for a descriptive subgroup audit. Expired/hospice discharge dispositions are excluded because their endpoint differs from readmission.
+![Held-out model evaluation](screenshots/model_evaluation.png)
 
-## Protocol
+## Held-out Results
 
-Patients, rather than encounters, are disjoint across train, calibration, validation, and test sets. `Pipeline` and `ColumnTransformer` fit imputation, scaling, and encoding on training data only. The study compares DummyClassifier, Logistic Regression, Random Forest, and Gradient Boosting. Model selection uses validation average precision; test results are held out until selection. Calibration is fit on the calibration set.
+| KPI | Result |
+| --- | ---: |
+| Eligible Discharge Encounters | 99,343 |
+| Held-out Test Encounters | 14,913 |
+| Selected Model | Random Forest |
+| Average Precision | 0.2023 |
+| ROC-AUC | 0.6545 |
+| Calibrated Brier Score | 0.0985 |
+| Recall at Exploratory Threshold | 81.14% |
 
-The threshold maximizes validation F2 across 0.02–0.60. F2 weights recall more than precision as an explicit academic demonstration of prioritizing missed positive cases; it is not a clinical utility policy. Metrics include precision, recall, F1, ROC-AUC, PR-AUC (average precision), calibration/Brier score, and a confusion matrix.
+Average precision is compared with a 0.1152 test-set prevalence baseline. These results describe a historical benchmark, not clinical utility or deployment performance.
 
-## Run
+## Questions Explored
+
+- Can discharge-available encounter fields rank recorded 30-day readmission risk above the prevalence baseline?
+- How do logistic regression, random forest, and gradient boosting compare on held-out data?
+- How well calibrated are predicted probabilities?
+- What precision and recall result from a validation-selected, recall-weighted threshold?
+- Which inputs show the strongest validation permutation importance?
+- How do descriptive subgroup metrics vary across sufficiently large groups?
+
+## What I Built
+
+- Patient-disjoint train, calibration, validation, and test partitions to reduce leakage.
+- End-to-end scikit-learn pipelines that fit imputation, scaling, and encoding on training data only.
+- Baseline and three candidate models, selected by validation average precision before test evaluation.
+- Separate probability calibration, a validation-only F2 threshold demonstration, bootstrap intervals, SHAP, permutation importance, and descriptive subgroup audit.
+- A responsive held-out model-performance dashboard and reproducibility artifacts.
+
+## Technology Used
+
+- Python: pandas, NumPy, scikit-learn, SHAP, matplotlib, joblib
+- Machine learning: Logistic Regression, Random Forest, Gradient Boosting, calibration
+- Evaluation: average precision, ROC-AUC, Brier score, precision, recall, F1/F2, confusion matrix
+- Quality: patient-level split checks and preprocessing protocol tests
+
+## Data and Modeling Protocol
+
+Source: [UCI Diabetes 130-US Hospitals for Years 1999–2008](https://archive.ics.uci.edu/dataset/296/diabetes%2B130-us%2Bhospitals%2Bfor%2Byears%2B1999-2008), CC BY 4.0. The prediction point is discharge. Target `1` is the source label `<30`; target `0` combines `NO` and `>30`.
+
+The model uses 21 discharge-available encounter fields. Encounter ID, patient ID, target, race, and gender are excluded from model features; race and gender are retained only for the descriptive subgroup audit. Expired/hospice dispositions are excluded because their endpoint differs from readmission.
+
+## Project Structure
+
+```text
+patient-readmission-risk-prediction/
+├── reports/          # Model card and data dictionary
+├── screenshots/      # README evaluation preview
+├── tests/            # Protocol and leakage checks
+├── run.py            # Reproducible benchmark pipeline
+└── requirements.txt
+```
+
+## Run Locally
 
 ```powershell
 cd patient-readmission-risk-prediction
@@ -24,10 +73,8 @@ python run.py --bootstrap 100
 python -m pytest -q
 ```
 
-Outputs include a responsive held-out model-performance dashboard (`outputs/dashboard.html`), validation and test comparison tables, evaluation chart, split manifest, subgroup audit, permutation importance, SHAP feature importance, five prediction examples, model artifact, and run manifest. The dashboard reports aggregate evaluation only; it is not a patient-level clinical interface.
+Open `outputs/dashboard.html` for the interactive aggregate evaluation report. Generated outputs also include comparison tables, split manifest, subgroup audit, SHAP and permutation importance, model artifact, and run manifest.
 
-## Limitations and fairness
+## Safety, Fairness, and Limits
 
-This historical benchmark lacks reliable event dates and hospital identifiers, so it is neither temporal nor external validation. Repeated encounters within a split remain correlated. Dataset labels may miss readmissions outside the recorded system. Subgroup metrics are exploratory, omit small groups, and do not prove fairness. SHAP and permutation importance describe model reliance, not causal effects. The data contain sensitive demographics and should not be used to automate decisions about people.
-
-See [model card](reports/model_card.md) for intended use, risks, privacy, and monitoring limits.
+This historical benchmark has neither temporal nor external validation; labels may miss readmissions outside the recorded system. Repeated encounters within a split remain correlated. Subgroup estimates are exploratory, omit small groups, and do not establish fairness. SHAP and permutation importance describe model reliance, not causation. See the [model card](reports/model_card.md) for intended use, risks, privacy, and monitoring limits.
